@@ -14,7 +14,7 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-export const Modal = memo(({ children, open, loading, ...rest }) => {
+export const Modal = memo(({ children, open, loading, onClose, ...rest }) => {
   const classes = useStyles();
   const content = loading ? <CircularProgress /> : children;
   return (
@@ -22,6 +22,7 @@ export const Modal = memo(({ children, open, loading, ...rest }) => {
       aria-labelledby="simple-modal-title"
       aria-describedby="simple-modal-description"
       open={open}
+      onClose={onClose}
       {...rest}
     >
       <div className={classes.paper}>{content}</div>
