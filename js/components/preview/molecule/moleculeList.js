@@ -4,7 +4,7 @@
 
 import { Grid, Chip, Tooltip, makeStyles, CircularProgress, Divider, Typography } from '@material-ui/core';
 import { FilterList } from '@material-ui/icons';
-import React, { useState, useEffect, memo, useRef, Fragment } from 'react';
+import React, { useState, useEffect, memo, useRef } from 'react';
 import { connect } from 'react-redux';
 import * as apiActions from '../../../reducers/api/actions';
 import * as listType from '../../../constants/listTypes';
@@ -82,16 +82,17 @@ const MoleculeList = memo(
     setCachedMolLists,
     setFilterItemsHeight,
     filterItemsHeight,
-    getJoinedMoleculeList
+    getJoinedMoleculeList,
+    filterSettings
   }) => {
     const classes = useStyles();
     const list_type = listType.MOLECULE;
     const oldUrl = useRef('');
+    const [state, setState] = useState();
     const setOldUrl = url => {
       oldUrl.current = url;
     };
-    const [sortDialogOpen, setSortDialogOpen] = useState(false);
-    const [filterSettings, setFilterSettings] = useState();
+    const [sortDialogAnchorEl, setSortDialogAnchorEl] = useState(null);
     const moleculesPerPage = 5;
     // toto nemozem riesit cez current ale klasicky cez state. Je tu ale zadrhel, ze sa to velakrat prerenderuje a ten
     // stav sa tym padom strati
@@ -100,6 +101,7 @@ const MoleculeList = memo(
     const imgWidth = 100;
 
     const isActiveFilter = !!(filterSettings || {}).active;
+
     const filterRef = useRef();
 
     let joinedMoleculeLists = getJoinedMoleculeList;
@@ -108,13 +110,6 @@ const MoleculeList = memo(
     useEffect(() => {
       setCurrentPage(0);
     }, [object_selection]);
-
-    const handleDialog = () => open => setSortDialogOpen(open);
-
-    const handleDialogClose = filter => {
-      setFilterSettings(filter);
-      handleDialog(false)();
-    };
 
     if (isActiveFilter) {
       joinedMoleculeLists = filterMolecules(joinedMoleculeLists, filterSettings);
@@ -137,13 +132,21 @@ const MoleculeList = memo(
         mol_group_on,
         cached_mol_lists
       }).catch(error => {
-        throw error;
+        setState(() => {
+          throw error;
+        });
       });
     }, [list_type, mol_group_on, setObjectList, target_on, setCachedMolLists, cached_mol_lists]);
 
     const listItemOffset = (currentPage + 1) * moleculesPerPage;
     const currentMolecules = joinedMoleculeLists.slice(0, listItemOffset);
     const canLoadMore = listItemOffset < joinedMoleculeLists.length;
+
+    useEffect(() => {
+      if (isActiveFilter === false) {
+        setFilterItemsHeight(0);
+      }
+    }, [isActiveFilter, setFilterItemsHeight]);
 
     return (
       <ComputeSize
@@ -157,7 +160,13 @@ const MoleculeList = memo(
           title="Hit navigator"
           headerActions={[
             <Button
-              onClick={handleDialog(!sortDialogOpen)}
+              onClick={event => {
+                if (sortDialogAnchorEl === null) {
+                  setSortDialogAnchorEl(event.currentTarget);
+                } else {
+                  setSortDialogAnchorEl(null);
+                }
+              }}
               color={'inherit'}
               disabled={!(object_selection || []).length}
               variant="text"
@@ -168,9 +177,9 @@ const MoleculeList = memo(
             </Button>
           ]}
         >
-          {sortDialogOpen && (
+          {sortDialogAnchorEl && (
             <MoleculeListSortFilterDialog
-              handleClose={handleDialogClose}
+              anchorEl={sortDialogAnchorEl}
               molGroupSelection={object_selection}
               cachedMolList={cached_mol_lists}
               filterSettings={filterSettings}
@@ -178,7 +187,7 @@ const MoleculeList = memo(
           )}
           <div ref={filterRef}>
             {isActiveFilter && (
-              <Fragment>
+              <>
                 <div className={classes.filterSection}>
                   <Grid container spacing={1}>
                     <Grid item xs={1} container alignItems="center">
@@ -209,7 +218,7 @@ const MoleculeList = memo(
                   </Grid>
                 </div>
                 <Divider />
-              </Fragment>
+              </>
             )}
           </div>
           <Grid container direction="column" className={classes.container} style={{ height: height }}>
@@ -281,7 +290,8 @@ function mapStateToProps(state) {
     object_selection: state.selectionReducers.mol_group_selection,
     object_list: state.apiReducers.molecule_list,
     cached_mol_lists: state.apiReducers.cached_mol_lists,
-    getJoinedMoleculeList: getJoinedMoleculeList(state)
+    getJoinedMoleculeList: getJoinedMoleculeList(state),
+    filterSettings: state.selectionReducers.filterSettings
   };
 }
 const mapDispatchToProps = {

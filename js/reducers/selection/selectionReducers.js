@@ -20,7 +20,8 @@ export const INITIAL_STATE = {
   currentVector: undefined,
   countOfPendingVectorLoadRequests: 0,
   mol_group_selection: [],
-  object_selection: undefined
+  object_selection: undefined,
+  filterSettings: undefined
 };
 
 export default function selectionReducers(state = INITIAL_STATE, action = {}) {
@@ -102,7 +103,6 @@ export default function selectionReducers(state = INITIAL_STATE, action = {}) {
           }
         }
       }
-      console.log('UPDATE_FULL_GRAPH ', new_dict);
       return Object.assign({}, state, {
         to_select: new_dict,
         querying: false
@@ -122,7 +122,6 @@ export default function selectionReducers(state = INITIAL_STATE, action = {}) {
       });
 
     case constants.SET_FRAGMENT_DISPLAY_LIST:
-      console.log('SET_FRAGMENT_DISPLAY_LIST');
       let newFragmentSet = new Set();
       action.fragmentDisplayList.forEach(f => {
         newFragmentSet.add(f);
@@ -133,13 +132,11 @@ export default function selectionReducers(state = INITIAL_STATE, action = {}) {
       });
 
     case constants.APPEND_FRAGMENT_DISPLAY_LIST:
-      console.log('APPEND_FRAGMENT_DISPLAY_LIST');
       return Object.assign({}, state, {
         fragmentDisplayList: [...new Set([...state.fragmentDisplayList, action.item.id])]
       });
 
     case constants.REMOVE_FROM_FRAGMENT_DISPLAY_LIST:
-      console.log('REMOVE_FROM_FRAGMENT_DISPLAY_LIST');
       let diminishedFragmentList = new Set(state.fragmentDisplayList);
       diminishedFragmentList.delete(action.item.id);
       return Object.assign({}, state, {
@@ -210,7 +207,6 @@ export default function selectionReducers(state = INITIAL_STATE, action = {}) {
       });
 
     case constants.RESET_SELECTION_STATE:
-      console.log('RESET_SELECTION_STATE');
       return INITIAL_STATE;
 
     case constants.INCREMENT_COUNT_OF_PENDING_VECTOR_LOAD_REQUESTS: {
@@ -231,6 +227,11 @@ export default function selectionReducers(state = INITIAL_STATE, action = {}) {
     case constants.SET_OBJECT_SELECTION:
       return Object.assign({}, state, {
         object_selection: action.payload
+      });
+
+    case constants.SET_FILTER_SETTINGS:
+      return Object.assign({}, state, {
+        filterSettings: action.payload
       });
 
     // Cases like: @@redux/INIT
